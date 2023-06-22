@@ -83,10 +83,20 @@ namespace AssetRipper.Core.Parser.Files.BundleFile.IO
 
 							case CompressionType.Lz4:
 							case CompressionType.Lz4HC:
+							case CompressionType.Zstd:
 								uint uncompressedSize = block.UncompressedSize;
 								byte[] uncompressedBytes = new byte[uncompressedSize];
 								byte[] compressedBytes = new BinaryReader(m_stream).ReadBytes((int)block.CompressedSize);
-								int bytesWritten = LZ4Codec.Decode(compressedBytes, uncompressedBytes);
+								int bytesWritten = 0;
+
+								if (compressType == CompressionType.Zstd)
+								{
+									bytesWritten = new ZstdNet.Decompressor().Unwrap(compressedBytes, uncompressedBytes);
+								}
+								else
+								{
+									bytesWritten = LZ4Codec.Decode(compressedBytes, uncompressedBytes);
+								}
 								if (bytesWritten != uncompressedSize)
 								{
 									throw new System.Exception($"Incorrect number of bytes written. {bytesWritten} instead of {uncompressedSize}");
